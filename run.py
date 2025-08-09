@@ -14,7 +14,7 @@ async def shotdown_bot():
 
 
 async def main():
-    bot = Bot(token='8226303674:AAF6uW_CV--3JwM1mqKXbtdMn4Qh097iQXI')
+    bot = Bot(token='')
     dp = Dispatcher()
     dp.include_router(client)
 
