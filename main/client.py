@@ -1,7 +1,7 @@
 from aiogram import Router, F
 from aiogram.filters import Command, CommandStart, StateFilter
 from aiogram.types import Message, CallbackQuery, callback_query
-from main.keyboard import menu, clients_name, clients_phone, categories, back_to_categories, client_location
+from main.keyboard import menu, clients_name, clients_phone, categories, back_to_categories, client_location, cards
 from aiogram.fsm.context import FSMContext
 from main.database.request import set_user, update_user, get_card, get_user
 
@@ -71,7 +71,7 @@ async def catalog(event: Message | CallbackQuery):
 
 
 @client.callback_query(F.data.startswith('category_'))
-async def cards(callback: CallbackQuery):
+async def cards_handler(callback: CallbackQuery):
     await callback.answer('')
     category_id = callback.data.split('_')[1]
 
