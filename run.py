@@ -5,7 +5,7 @@ from main.database.models import init_models
 
 
 async def start_bot():
-    await init_models()
+    await init_models() #Создание базы данных
     print('Бот запущен')
 
 async def shotdown_bot():
@@ -14,7 +14,7 @@ async def shotdown_bot():
 
 
 async def main():
-    bot = Bot(token='')
+    bot = Bot(token='8226303674:AAF6uW_CV--3JwM1mqKXbtdMn4Qh097iQXI')
     dp = Dispatcher()
     dp.include_router(client)
 
