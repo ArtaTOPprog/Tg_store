@@ -18,6 +18,11 @@ async def update_user(tg_id, name, phone_number):
         await session.execute(update(User).where(User.tg_id == tg_id).values(name=name, phone_number=phone_number))
         await session.commit()
 
+
+async def get_user(tg_id):
+    async with async_session() as session:
+        await session.scalar(select(User).where(User.tg_id == tg_id))
+
 #Каталог товаров
 async def get_categories():
     async with async_session() as session:

@@ -2,6 +2,8 @@ from aiogram import Bot, Dispatcher
 import asyncio
 from main.client import client
 from main.database.models import init_models
+import os
+from dotenv import load_dotenv
 
 
 async def start_bot():
@@ -14,7 +16,8 @@ async def shotdown_bot():
 
 
 async def main():
-    bot = Bot(token='8226303674:AAF6uW_CV--3JwM1mqKXbtdMn4Qh097iQXI')
+    load_dotenv()
+    bot = Bot(token=os.getenv('TOKEN'))
     dp = Dispatcher()
     dp.include_router(client)
 

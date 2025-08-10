@@ -1,7 +1,9 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+
 from main.database.request import get_categories, get_cards_by_category
 
+#Кнопки для старта и регистрации пользователя
 menu = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text='Каталог')],
     [KeyboardButton(text='Контакты')]
@@ -19,6 +21,13 @@ async def clients_phone():
     ], resize_keyboard=True, input_field_placeholder='Введите номер телефона')
 
 
+async def client_location():
+    return ReplyKeyboardMarkup(keyboard=[
+        [KeyboardButton(text='Отправить локацию', request_location=True)]
+    ], resize_keyboard=True, input_field_placeholder='Отправить геолокацию')
+
+
+#Конопки для катагорий товара и самого товара
 async def categories():
     keyboard = InlineKeyboardBuilder()
     all_categories = await get_categories()
@@ -30,14 +39,14 @@ async def categories():
 
 
 async def cards(category_id):
-    Keyboard = InlineKeyboardBuilder()
+    keyboard = InlineKeyboardBuilder()
     all_cards = await get_cards_by_category(category_id)
 
     for card in all_cards:
-        Keyboard.row(InlineKeyboardButton(text=f'{card.name} | {card.price}RUB', callback_data=f'card_{card.id}'))
+        keyboard.row(InlineKeyboardButton(text=f'{card.name} | {card.price}RUB', callback_data=f'card_{card.id}'))
     
-    Keyboard.row(InlineKeyboardButton(text='Назад', callback_data='categories'))
-    return Keyboard.as_markup()
+    keyboard.row(InlineKeyboardButton(text='Назад', callback_data='categories'))
+    return keyboard.as_markup()
 
 
 async def back_to_categories(category_id, card_id):

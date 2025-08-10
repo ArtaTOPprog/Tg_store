@@ -1,13 +1,19 @@
 from aiogram import Router, F
 from aiogram.filters import Command, CommandStart, StateFilter
-from aiogram.types import Message, CallbackQuery
-from main.keyboard import menu, clients_name, clients_phone, categories, back_to_categories
+from aiogram.types import Message, CallbackQuery, callback_query
+from main.keyboard import menu, clients_name, clients_phone, categories, back_to_categories, client_location
 from aiogram.fsm.context import FSMContext
+from main.database.request import set_user, update_user, get_card, get_user
 
-from main.database.request import set_user, update_user, get_card
+import ssl
+import certifi
+from geopy.geocoders import Nominatim
+
 
 client = Router()
 
+ctx = ssl.create_default_context(cafile=certifi.where())
+geolocator = Nominatim(user_agent='TelegramBotForShop', ssl_context=ctx)
 
 #Старт и регистрация пользователя
 
@@ -64,23 +70,73 @@ async def catalog(event: Message | CallbackQuery):
         await event.message.edit_text('Выберите категорию товаров', reply_markup= await categories())
 
 
-@client.callback_query(F.data.startwith('category_'))
+@client.callback_query(F.data.startswith('category_'))
 async def cards(callback: CallbackQuery):
-    await callback.answer()
+    await callback.answer('')
     category_id = callback.data.split('_')[1]
 
     await callback.message.edit_text('Выберите товар:',reply_markup = await cards(category_id))
 
 
-@client.callback_query(F.data.startwith('card_'))
+@client.callback_query(F.data.startswith('card_'))
 async def card_info(callback: CallbackQuery):
-    await callback.answer()
+    await callback.answer('')
     card_id = callback.data.split('_')[1]
     card = await get_card(card_id)
     await callback.message.delete()
     await callback.message.answer_photo(photo=card.image,caption=f'{card.name}\n\n{card.description}\n\n{card.price}RUB',
-                                        reply_markup=await back_to_categories(card.category_id, card.id))
+                                        reply_markup=await back_to_categories(card.category_id, card_id))
     
+
+#Покупка и формление заказа
+client.callback_query(F.data.startswith == 'buy_')
+async def client_buy(callback: CallbackQuery, state: FSMContext):
+    card_id = callback.data.split('_')[1]
+    await callback.answer('')
+    await state.set_state('waiting_for_adress')
+    await state.update_data(card_id=card_id)
+    await callback.message.answer('Отправьте ваш адрес доставки', reply_markup=await client_location())
+
+
+@client.message(F.location, StateFilter('waiting_for_adress'))
+async def get_geolocation(message: Message, state: FSMContext):
+    data = await state.get_data()
+    address = geolocator.reverse(f'{message.location.latitude}, {message.location.longitude}', exactly_one=True, language='ru')
+    user = await get_user(message.from_user.id)
+    card_id = data.get('card_id')
+
+    full_info = (
+        f'Новый заказ!\n\n'
+        f'Пользователь: {user.name}, @{message.from_user.username}, (ID: {user.tg_id})\n'
+        f'Телефон: {user.phone_number}'
+        f'Адрес: {address}\n'
+        f'Товар ID: {card_id}'
+    )
+
+    await message.bot.send_message(-4853734480)
+    await message.answer('Спасибо, ваш заказ принят', reply_markup=menu)
+    await state.clear()
+
+
+@client.message(F.location, StateFilter('waiting_for_adress'))
+async def get_geolocation(message: Message, state: FSMContext):
+    data = await state.get_data()
+    address = message.text
+    user = await get_user(message.from_user.id)
+    card_id = data.get('card_id')
+
+    full_info = (
+        f'Новый заказ!\n\n'
+        f'Пользователь: {user.name}, @{message.from_user.username}, (ID: {user.tg_id})\n'
+        f'Телефон: {user.phone_number}'
+        f'Адрес: {address}\n'
+        f'Товар ID: {card_id}'
+    )
+
+    await message.bot.send_message(-4853734480, full_info)
+    await message.answer('Спасибо, ваш заказ принят', reply_markup=menu)
+    await state.clear()
+
 #Вспомогательные хендлеры
 
 @client.message(F.photo)
